@@ -10,7 +10,9 @@ async fn main() {
     let args = Args::parse();
     let cmd = Command::new(args.command);
 
-    let mut monitor = Monitor::new(cmd).max_restarts(args.max_restarts);
+    let mut monitor = Monitor::new(cmd)
+        .max_restarts(args.max_restarts)
+        .delay(args.delay);
     match monitor.run().await {
         Ok(()) => println!("process exited successfully"),
         Err(e) => eprintln!("Monitoring error: {e}"),
@@ -20,6 +22,7 @@ async fn main() {
 struct Monitor {
     command: Command,
     max_restarts: Option<usize>,
+    delay: usize,
 }
 
 impl Monitor {
@@ -27,11 +30,17 @@ impl Monitor {
         Monitor {
             command,
             max_restarts: None,
+            delay: 1,
         }
     }
 
     fn max_restarts(mut self, max_restarts: usize) -> Self {
         self.max_restarts = Some(max_restarts);
+        self
+    }
+
+    fn delay(mut self, delay: usize) -> Self {
+        self.delay = delay;
         self
     }
 
@@ -54,7 +63,7 @@ impl Monitor {
             }
 
             restart_count += 1;
-            time::sleep(Duration::from_secs(1)).await;
+            time::sleep(Duration::from_secs(self.delay as u64)).await;
         }
     }
 }
@@ -73,4 +82,6 @@ struct Args {
     command: String,
     #[clap(long, default_value = "3")]
     max_restarts: usize,
+    #[clap(long, default_value = "1")]
+    delay: usize,
 }
