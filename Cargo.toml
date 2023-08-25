@@ -4,6 +4,11 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-tokio = { version = "1", features = ["full"] }
-thiserror = "1.0"
-clap = { version = "4.3.24", features = ["derive"] }
+bytes = "1.4.0"
+clap = { version = "4.4.0", features = ["derive"] }
+daemonize = "0.5.0"
+directories = "5.0.1"
+thiserror = "1.0.47"
+tokio = { version = "1.32.0", features = ["full"] }
+tokio-stream = "0.1.14"
+tokio-util = { version = "0.7.8", features = ["codec"] }
