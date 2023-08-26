@@ -21,7 +21,7 @@ impl Message {
 }
 
 #[derive(Debug)]
-pub(super) struct Codec;
+pub struct Codec;
 
 impl Decoder for Codec {
     type Item = Message;
