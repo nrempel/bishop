@@ -27,7 +27,7 @@ impl Daemon {
             while let Some(result) = rx.recv().await {
                 // TODO: handle messages
                 match result {
-                    Ok(message) => println!("received: {message}"),
+                    Ok(message) => println!("received: {message:?}"),
                     Err(err) => eprintln!("error decoding message: {err}"),
                 }
             }

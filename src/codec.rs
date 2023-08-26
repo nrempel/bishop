@@ -1,41 +1,54 @@
-use bytes::{Buf, BufMut, BytesMut};
+use bincode::{deserialize, serialize};
+use bytes::BytesMut;
+use bytes::{Buf, BufMut};
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use tokio_util::codec::{Decoder, Encoder};
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum Message {
+    Ping(String),
+}
 
 #[derive(Debug)]
 pub(super) struct Codec;
 
 impl Decoder for Codec {
-    type Item = String;
+    type Item = Message;
     type Error = Error;
 
     fn decode(&mut self, buf: &mut BytesMut) -> Result<Option<Self::Item>, Self::Error> {
-        match buf.iter().position(|&b| b == b'\n') {
-            Some(i) => {
-                let line = buf.split_to(i);
-                buf.advance(1);
-                let s = std::str::from_utf8(&line)?;
-                Ok(Some(s.to_string()))
+        if buf.len() >= MESSAGE_SIZE_OFFSET {
+            let message_len = (&buf[..MESSAGE_SIZE_OFFSET]).get_u32() as usize;
+            if buf.len() >= MESSAGE_SIZE_OFFSET + message_len {
+                let msg_data = buf.split_to(MESSAGE_SIZE_OFFSET + message_len);
+                let msg: Message = deserialize(&msg_data[MESSAGE_SIZE_OFFSET..])?;
+                return Ok(Some(msg));
             }
-            None => Ok(None),
         }
+        Ok(None)
     }
 }
 
-impl Encoder<String> for Codec {
+impl Encoder<Message> for Codec {
     type Error = Error;
 
-    fn encode(&mut self, data: String, buf: &mut BytesMut) -> Result<(), Self::Error> {
-        buf.put(data.as_bytes());
-        buf.put_u8(b'\n');
+    fn encode(&mut self, item: Message, buf: &mut BytesMut) -> Result<(), Self::Error> {
+        let bytes = serialize(&item)?;
+        buf.reserve(MESSAGE_SIZE_OFFSET + bytes.len());
+
+        buf.put_u32(bytes.len() as u32);
+        buf.put_slice(&bytes);
         Ok(())
     }
 }
 
 #[derive(Debug, Error)]
 pub enum Error {
-    #[error("invalid string: {0}")]
-    InvalidStringUtf8(#[from] std::str::Utf8Error),
     #[error("io error: {0}")]
     IoError(#[from] std::io::Error),
+    #[error("bincode error: {0}")]
+    BincodeError(#[from] bincode::Error),
 }
+
+const MESSAGE_SIZE_OFFSET: usize = 4;
