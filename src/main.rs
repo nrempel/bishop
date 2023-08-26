@@ -41,7 +41,8 @@ fn up(args: Up) -> Result<(), Error> {
 
 fn ping(args: Ping) -> Result<(), Error> {
     let rt = Runtime::new()?;
-    let result = rt.block_on(async {
+
+    rt.block_on(async {
         let stream = TcpStream::connect(&args.addr).await?;
         let (reader, writer) = stream.into_split();
         let mut reader = FramedRead::new(reader, Codec);
@@ -56,9 +57,7 @@ fn ping(args: Ping) -> Result<(), Error> {
             Some(Err(err)) => Err(err.into()),
             None => Err(Error::UnexpectedEOF),
         }
-    });
-
-    result
+    })
 }
 
 #[derive(Parser)]
