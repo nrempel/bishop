@@ -5,9 +5,9 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use tokio_util::codec::{Decoder, Encoder};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub enum Message {
-    Ping(String),
+    Ping,
 }
 
 #[derive(Debug)]
@@ -52,3 +52,21 @@ pub enum Error {
 }
 
 const MESSAGE_SIZE_OFFSET: usize = 4;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn encode_decode_message() {
+        let mut codec = Codec;
+        let mut buf = BytesMut::new();
+        let message = Message::Ping;
+
+        let res_encode = codec.encode(message.clone(), &mut buf);
+        let res_decode = codec.decode(&mut buf).unwrap().unwrap();
+
+        assert!(res_encode.is_ok());
+        assert_eq!(message, res_decode);
+    }
+}
