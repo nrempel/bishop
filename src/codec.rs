@@ -8,6 +8,16 @@ use tokio_util::codec::{Decoder, Encoder};
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub enum Message {
     Ping,
+    Pong,
+}
+
+impl Message {
+    pub fn response(&self) -> Option<Message> {
+        match self {
+            Message::Ping => Some(Message::Pong),
+            Message::Pong => None,
+        }
+    }
 }
 
 #[derive(Debug)]
